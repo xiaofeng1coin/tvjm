@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TVBOX接口解密</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS 变量，定义明亮暖色主题 */
+        :root {
+            --bg-color: #f8f9fa; /* 柔和的米白背景 */
+            --surface-color: #ffffff; /* 纯白容器背景 */
+            --primary-glow-color: rgba(249, 115, 22, 0.4); /* 暖橙色光晕 */
+            --primary-color: #f97316;  /* 暖橙色 (Tailwind Orange 500) */
+            --primary-hover-color: #fb923c; /* 更亮的橙色 (Orange 400) */
+            --text-color: #1f2937; /* 深灰色文本，易于阅读 */
+            --text-muted-color: #6b7280; /* 中灰色辅助文本 */
+            --border-color: #e5e7eb; /* 浅灰色边框 */
+            --success-color: #16a34a; /* 绿色 */
+            --error-color: #dc2626;  /* 红色 */
+            --font-main: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            /* 更加柔和的阴影 */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 30px 40px;
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        .container:hover {
+             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.07), 0 4px 10px rgba(0, 0, 0, 0.07), 0 0 15px var(--primary-glow-color);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            font-weight: 600;
+            letter-spacing: 1px;
+            /* 标题使用柔和的文字阴影代替发光效果，更显精致 */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="url"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            background-color: #fdfdfe; /* 比背景稍白的输入框 */
+            color: var(--text-color);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px var(--primary-glow-color); /* 聚焦时显示橙色辉光 */
+        }
+
+        button {
+            padding: 12px 25px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
+        }
+
+        button:hover {
+            background: var(--primary-hover-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0px) scale(0.98);
+            box-shadow: 0 2px 10px rgba(249, 115, 22, 0.2);
+        }
+
+        .options {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted-color);
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: var(--primary-color); /* 让复选框也使用主题色 */
+        }
+
+        .result-container {
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color); /* 结果区域使用背景色，形成对比 */
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f1f3f5; /* 结果框头部颜色 */
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.1em;
+            color: var(--text-muted-color);
+            font-weight: 500;
+        }
+
+        .copy-button {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted-color);
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-button:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: none;
+            box-shadow: none;
+        }
+        .copy-button.copied {
+            border-color: var(--success-color);
+            color: var(--success-color);
+            background-color: #ecfdf5;
+        }
+
+        .result-content {
+            padding: 15px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .error-box {
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff1f2;
+            border: 1px solid var(--error-color);
+            color: #9f1239;
+        }
+        .error-box h2 {
+            color: var(--error-color);
+            margin-bottom: 10px;
+        }
+
+        pre, code {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        pre {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>URL内容解密工具</h1>
+
+        <form method="post">
+            <div class="input-group">
+                <input type="url" name="url" placeholder="输入目标接口网址..." value="{{ url | default('') }}" required autocomplete="off">
+                <button type="submit">
+                    <i class="fa-solid fa-bolt-lightning"></i> 解密
+                </button>
+            </div>
+            <div class="options">
+                <input type="checkbox" id="ignore_ssl" name="ignore_ssl" {% if ignore_ssl_checked %}checked{% endif %}>
+                <label for="ignore_ssl">忽略SSL证书错误</label>
+            </div>
+        </form>
+
+        {% if error %}
+        <div class="error-box">
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> 处理失败</h2>
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        {% if result %}
+        <div class="result-container">
+            <div class="result-header">
+                <h2><i class="fa-solid fa-code"></i> 解密结果</h2>
+                <button type="button" id="copy-btn" class="copy-button">
+                    <i class="fa-regular fa-copy"></i> 复制
+                </button>
+            </div>
+            <div class="result-content">
+                <pre><code id="result-code">{{ result }}</code></pre>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- ★★★ START: UPDATED JAVASCRIPT SECTION ★★★ -->
+    <script>
+        /**
+         * 一个兼容性更好的文本复制函数
+         * @param {string} text - 需要复制的文本
+         * @returns {Promise<void>} - 返回一个Promise，成功时resolve，失败时reject
+         */
+        function copyTextToClipboard(text) {
+            // 优先使用现代的 Clipboard API (需要安全上下文)
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            } else {
+                // 降级使用传统的方法
+                return new Promise((resolve, reject) => {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+
+                    // 使textarea在屏幕外，防止干扰页面
+                    textArea.style.position = 'fixed';
+                    textArea.style.top = '-9999px';
+                    textArea.style.left = '-9999px';
+
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+
+                    try {
+                        // 执行复制命令
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            resolve();
+                        } else {
+                            reject(new Error('复制命令执行失败'));
+                        }
+                    } catch (err) {
+                        reject(err);
+                    } finally {
+                        // 清理临时创建的textarea
+                        document.body.removeChild(textArea);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const copyBtn = document.getElementById('copy-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => {
+                    const codeBlock = document.getElementById('result-code');
+                    if (!codeBlock) return; // 防御性编程
+
+                    const textToCopy = codeBlock.innerText;
+
+                    // 使用我们新的兼容性复制函数
+                    copyTextToClipboard(textToCopy).then(() => {
+                        // 成功反馈
+                        const originalContent = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `<i class="fa-solid fa-check"></i> 已复制`;
+                        copyBtn.classList.add('copied');
+
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalContent;
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+
+                    }).catch(err => {
+                        // 失败反馈
+                        console.error('无法复制文本: ', err);
+                        alert('复制失败！您的浏览器可能不支持或阻止了该操作。');
+                        const originalContent = copyBtn.innerHTML;
+                        copyBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> 失败`;
+
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalContent;
+                        }, 2000);
+                    });
+                });
+            }
+        });
+    </script>
+    <!-- ★★★ END: UPDATED JAVASCRIPT SECTION ★★★ -->
+</body>
+</html>
